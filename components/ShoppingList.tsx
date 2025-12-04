@@ -98,9 +98,11 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({ items, manualItems, 
     setAiAdvice(null);
 
     try {
-      const apiKey = process.env.API_KEY;
+      // Safe access to environment variable
+      const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : null;
+
       if (!apiKey) {
-        setAiAdvice("Erro: Chave de API não configurada. Contacte o administrador.");
+        setAiAdvice("Erro: Chave de API não configurada no ambiente. Por favor configure a variável API_KEY.");
         return;
       }
 
@@ -126,7 +128,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({ items, manualItems, 
 
     } catch (error) {
       console.error("Erro AI:", error);
-      setAiAdvice("Não foi possível contactar o assistente IA neste momento.");
+      setAiAdvice("Não foi possível contactar o assistente IA neste momento. Verifique a consola para mais detalhes.");
     } finally {
       setLoading(false);
     }

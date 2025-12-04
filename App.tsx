@@ -20,33 +20,74 @@ export default function App() {
   const [manualShoppingList, setManualShoppingList] = useState<ManualShoppingItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from LocalStorage
+  // Load from LocalStorage SAFE MODE
   useEffect(() => {
-    const savedItems = localStorage.getItem('it-stock-items');
-    const savedLogs = localStorage.getItem('it-stock-logs');
-    const savedCategories = localStorage.getItem('it-stock-categories');
-    const savedManual = localStorage.getItem('it-stock-manual-list');
+    try {
+      const savedItems = localStorage.getItem('it-stock-items');
+      const savedLogs = localStorage.getItem('it-stock-logs');
+      const savedCategories = localStorage.getItem('it-stock-categories');
+      const savedManual = localStorage.getItem('it-stock-manual-list');
 
-    if (savedItems) setItems(JSON.parse(savedItems));
-    else setItems(DADOS_INICIAIS);
+      if (savedItems) {
+        try {
+          const parsed = JSON.parse(savedItems);
+          if (Array.isArray(parsed)) setItems(parsed);
+          else setItems(DADOS_INICIAIS);
+        } catch (e) {
+          console.error("Erro ao ler items", e);
+          setItems(DADOS_INICIAIS);
+        }
+      } else {
+        setItems(DADOS_INICIAIS);
+      }
 
-    if (savedLogs) setLogs(JSON.parse(savedLogs));
+      if (savedLogs) {
+        try {
+          const parsed = JSON.parse(savedLogs);
+          if (Array.isArray(parsed)) setLogs(parsed);
+        } catch (e) { console.error("Erro logs", e); }
+      }
 
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
-    else setCategories(CATEGORIAS_DEFAULT);
+      if (savedCategories) {
+        try {
+          const parsed = JSON.parse(savedCategories);
+          if (Array.isArray(parsed) && parsed.length > 0) setCategories(parsed);
+          else setCategories(CATEGORIAS_DEFAULT);
+        } catch (e) {
+          setCategories(CATEGORIAS_DEFAULT);
+        }
+      } else {
+        setCategories(CATEGORIAS_DEFAULT);
+      }
 
-    if (savedManual) setManualShoppingList(JSON.parse(savedManual));
+      if (savedManual) {
+        try {
+          const parsed = JSON.parse(savedManual);
+          if (Array.isArray(parsed)) setManualShoppingList(parsed);
+        } catch (e) { console.error("Erro manual list", e); }
+      }
 
-    setIsLoaded(true);
+    } catch (globalError) {
+      console.error("Critical storage error", globalError);
+      // Fallback to safe defaults
+      setItems(DADOS_INICIAIS);
+      setCategories(CATEGORIAS_DEFAULT);
+    } finally {
+      setIsLoaded(true);
+    }
   }, []);
 
   // Save to LocalStorage
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('it-stock-items', JSON.stringify(items));
-      localStorage.setItem('it-stock-logs', JSON.stringify(logs));
-      localStorage.setItem('it-stock-categories', JSON.stringify(categories));
-      localStorage.setItem('it-stock-manual-list', JSON.stringify(manualShoppingList));
+      try {
+        localStorage.setItem('it-stock-items', JSON.stringify(items));
+        localStorage.setItem('it-stock-logs', JSON.stringify(logs));
+        localStorage.setItem('it-stock-categories', JSON.stringify(categories));
+        localStorage.setItem('it-stock-manual-list', JSON.stringify(manualShoppingList));
+      } catch (e) {
+        console.error("Failed to save to localStorage", e);
+      }
     }
   }, [items, logs, categories, manualShoppingList, isLoaded]);
 
@@ -161,6 +202,10 @@ export default function App() {
         return <Dashboard items={items} />;
     }
   };
+
+  if (!isLoaded) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-100 text-slate-400">A carregar...</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-100 font-sans text-slate-900">
